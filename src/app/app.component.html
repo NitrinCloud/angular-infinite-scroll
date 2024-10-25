@@ -1,6 +1,6 @@
 <div class="container">
   <h1 class="my-4">Products</h1>
-  <input id="search" name="search" (change)="searchChange($event)" class="my-4" />
+  <input id="search" name="search" (input)="searchChange($event)" class="my-4" />
   <div class="products-list"
        *ngIf="paginator()"
        infiniteScroll

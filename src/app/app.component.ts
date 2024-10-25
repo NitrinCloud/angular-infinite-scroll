@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal, Signal } from '@angular/core';
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { ProductsApiService } from './api/products-api.service';
-import { Observable, scan, switchMap, tap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Observable, scan, switchMap, tap } from 'rxjs';
 import { ProductsPaginator } from './models/models';
 
 @Component({
@@ -33,6 +33,8 @@ export class AppComponent {
 
   private loadProducts$(): Observable<ProductsPaginator> {
     return this.filter$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
       tap(() => this.loading.set(true)),
       switchMap((filter) => this.api.getProducts$(filter.search, filter.page)),
       scan(this.updatePaginator, {items: [], page: 0, hasMorePages: true} as ProductsPaginator),
