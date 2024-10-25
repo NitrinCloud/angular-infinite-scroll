@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, Signal } from '@angular/core';
+import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { ProductsApiService } from './api/products-api.service';
-import { BehaviorSubject, Observable, scan, switchMap, tap } from 'rxjs';
+import { Observable, scan, switchMap, tap } from 'rxjs';
 import { ProductsPaginator } from './models/models';
 
 @Component({
@@ -12,20 +13,23 @@ export class AppComponent {
   private api = inject(ProductsApiService);
 
   public paginator$: Observable<ProductsPaginator>;
+  public paginator: Signal<ProductsPaginator | undefined>;
 
-  public loading$ = new BehaviorSubject(true);
-  private page$ = new BehaviorSubject(1);
+  public loading = signal(true);
+  private page = signal(1);
+  private page$ = toObservable(this.page);
 
   constructor() {
     this.paginator$ = this.loadProducts$();
+    this.paginator = toSignal(this.paginator$);
   }
 
   private loadProducts$(): Observable<ProductsPaginator> {
     return this.page$.pipe(
-      tap(() => this.loading$.next(true)),
+      tap(() => this.loading.set(true)),
       switchMap((page) => this.api.getProducts$(page)),
       scan(this.updatePaginator, {items: [], page: 0, hasMorePages: true} as ProductsPaginator),
-      tap(() => this.loading$.next(false)),
+      tap(() => this.loading.set(false)),
     );
   }
 
@@ -45,6 +49,6 @@ export class AppComponent {
     if (!paginator.hasMorePages) {
       return;
     }
-    this.page$.next(paginator.page + 1);
+    this.page.set(paginator.page + 1);
   }
 }

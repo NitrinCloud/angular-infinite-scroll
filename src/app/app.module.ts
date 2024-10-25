@@ -3,20 +3,13 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
 import { InfiniteScrollModule } from 'ngx-infinite-scroll';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-    HttpClientModule,
-    InfiniteScrollModule,
-  ],
-  providers: [],
-  bootstrap: [
-    AppComponent
-  ]
-})
+@NgModule({ declarations: [
+        AppComponent
+    ],
+    bootstrap: [
+        AppComponent
+    ], imports: [BrowserModule,
+        InfiniteScrollModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule {}
