@@ -1,4 +1,4 @@
-import { Component, inject, signal, Signal } from '@angular/core';
+import { Component, computed, inject, signal, Signal } from '@angular/core';
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { ProductsApiService } from './api/products-api.service';
 import { Observable, scan, switchMap, tap } from 'rxjs';
@@ -17,7 +17,14 @@ export class AppComponent {
 
   public loading = signal(true);
   private page = signal(1);
-  private page$ = toObservable(this.page);
+  private search = signal('');
+
+  private filter$ = toObservable(computed(() => {
+    return {
+      page: this.page(),
+      search: this.search()
+    }
+  }));
 
   constructor() {
     this.paginator$ = this.loadProducts$();
@@ -25,9 +32,9 @@ export class AppComponent {
   }
 
   private loadProducts$(): Observable<ProductsPaginator> {
-    return this.page$.pipe(
+    return this.filter$.pipe(
       tap(() => this.loading.set(true)),
-      switchMap((page) => this.api.getProducts$(page)),
+      switchMap((filter) => this.api.getProducts$(filter.search, filter.page)),
       scan(this.updatePaginator, {items: [], page: 0, hasMorePages: true} as ProductsPaginator),
       tap(() => this.loading.set(false)),
     );
@@ -50,5 +57,11 @@ export class AppComponent {
       return;
     }
     this.page.set(paginator.page + 1);
+  }
+
+  public searchChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.page.set(1);
+    this.search.set(target.value);
   }
 }

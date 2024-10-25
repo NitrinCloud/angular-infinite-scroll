@@ -9,9 +9,9 @@ import { DummyJsonResponse, ProductsPaginator } from '../models/models';
 export class ProductsApiService {
   private http = inject(HttpClient);
 
-  public getProducts$(page: number = 1, itemsPerPage: number = 16): Observable<ProductsPaginator> {
+  public getProducts$(search: string = '', page: number = 1, itemsPerPage: number = 16): Observable<ProductsPaginator> {
     return this.http.get<DummyJsonResponse>(
-      'https://dummyjson.com/products',
+      'https://dummyjson.com/products/search?q=' + search,
       {
         params: {
           limit: itemsPerPage,
