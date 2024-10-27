@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, Signal } from '@angular/core';
+import { Component, computed, inject, signal, Signal, WritableSignal } from '@angular/core';
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { ProductsApiService } from './api/products-api.service';
 import { debounceTime, distinctUntilChanged, Observable, scan, switchMap, tap } from 'rxjs';
@@ -10,37 +10,32 @@ import { ProductsPaginator } from './models/models';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  private api = inject(ProductsApiService);
+  private api: ProductsApiService = inject(ProductsApiService);
 
-  public paginator$: Observable<ProductsPaginator>;
-  public paginator: Signal<ProductsPaginator | undefined>;
+  public loading: WritableSignal<boolean> = signal(true);
+  private page: WritableSignal<number> = signal(1);
+  private search: WritableSignal<string> = signal('');
 
-  public loading = signal(true);
-  private page = signal(1);
-  private search = signal('');
-
-  private filter$ = toObservable(computed(() => {
+  private filter: Signal<{
+    page: number;
+    search: string;
+  }> = computed(() => {
     return {
       page: this.page(),
       search: this.search()
     }
-  }));
+  });
+  private filter$ = toObservable(this.filter);
 
-  constructor() {
-    this.paginator$ = this.loadProducts$();
-    this.paginator = toSignal(this.paginator$);
-  }
-
-  private loadProducts$(): Observable<ProductsPaginator> {
-    return this.filter$.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      tap(() => this.loading.set(true)),
-      switchMap((filter) => this.api.getProducts$(filter.search, filter.page)),
-      scan(this.updatePaginator, {items: [], page: 0, hasMorePages: true} as ProductsPaginator),
-      tap(() => this.loading.set(false)),
-    );
-  }
+  public paginator$: Observable<ProductsPaginator> = this.filter$.pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    tap(() => this.loading.set(true)),
+    switchMap((filter) => this.api.getProducts$(filter.search, filter.page)),
+    scan(this.updatePaginator, {items: [], page: 0, hasMorePages: true} as ProductsPaginator),
+    tap(() => this.loading.set(false)),
+  );
+  public paginator: Signal<ProductsPaginator | undefined> = toSignal(this.paginator$);
 
   private updatePaginator(accumulator: ProductsPaginator, value: ProductsPaginator): ProductsPaginator {
     if (value.page === 1) {
